@@ -85,7 +85,7 @@ npm run demo
 - Өгөгдлийн сан нь **Supabase PostgreSQL** (Токио, ap-northeast-1). Холболтын мөрийг Supabase → **Connect → ORMs → Prisma**-аас авна.
   - Тасралтгүй ажилладаг сервер (локал, VPS): `DATABASE_URL`-д **5432 session pooler** + `?connection_limit=5`. Query бүр нэг удаа очиж ирнэ (Монголоос ~90 мс).
   - Vercel зэрэг serverless: `DATABASE_URL`-д 6543 transaction pooler + `?pgbouncer=true`. Query бүр ойролцоогоор 5 дахин удаан тул вэб серверийг сантайгаа нэг бүсэд байрлуулна.
-  - `DIRECT_URL` (5432) нь `prisma db push`-д хэрэглэгдэнэ.
+  - Нэг л хувьсагч (`DATABASE_URL`) байна. Бүтэц өөрчлөх `npm run db:push`-ийг локал дээрээс (5432) ажиллуулна.
 - `npm run db:push` бүтэц үүсгэсний дараа [prisma/rls.sql](prisma/rls.sql)-ийг ажиллуулна. Энэ нь бүх хүснэгт дээр RLS асааж, Supabase Data API (publishable key)-аар өгөгдөл унших замыг хаана. Шинэ хүснэгт нэмсний дараа заавал `npm run db:push`-ээр ажиллуулаарай.
 - Хугацаа дууссан баталгаажуулалтыг цагт нь шилжүүлэхийн тулд `/api/cron?key=CRON_SECRET`-ийг 5 минут тутам дуудна. Хуудас ачаалах бүрт ч мөн шалгагддаг.
 - Web push нь Android Chrome дээр шууд ажиллана. iPhone дээр сайтыг «Home Screen»-д нэмсэн үед л ажиллана (iOS 16.4+).

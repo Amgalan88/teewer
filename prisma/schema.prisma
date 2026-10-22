@@ -7,9 +7,9 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL") // сайт ажиллахад (session pooler 5432, .env-ийн тайлбарыг үз)
-  directUrl = env("DIRECT_URL") // 5432: db push / migrate
+  provider = "postgresql"
+  // Локал: session pooler 5432 (db push үүгээр). Vercel: transaction pooler 6543 + pgbouncer=true
+  url      = env("DATABASE_URL")
 }
 
 model User {

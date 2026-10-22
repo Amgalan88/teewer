@@ -6,7 +6,6 @@ export const dynamic = "force-dynamic";
 
 const REQUIRED = [
   "DATABASE_URL",
-  "DIRECT_URL",
   "SESSION_SECRET",
   "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
   "VAPID_PRIVATE_KEY",
