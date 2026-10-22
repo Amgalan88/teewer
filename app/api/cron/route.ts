@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { runMaintenance } from "@/lib/workflow";
 
-// Гадны cron (жишээ нь 5 минут тутам) дуудна: /api/cron?key=CRON_SECRET
-// Хуудас ачаалах бүрт мөн ажилладаг тул заавал биш, гэхдээ мэдэгдэл цагтаа очиход тустай.
+// Хугацаа дууссан тендер, баталгаажуулалтыг шинэчилнэ. Хуудас ачаалах бүрт мөн ажилладаг.
+// Vercel Cron нь `Authorization: Bearer <CRON_SECRET>` илгээнэ; гадны cron бол ?key=<CRON_SECRET>.
 export async function GET(req: Request) {
+  const secret = process.env.CRON_SECRET;
+  const auth = req.headers.get("authorization");
   const key = new URL(req.url).searchParams.get("key");
-  if (!process.env.CRON_SECRET || key !== process.env.CRON_SECRET) {
+  if (!secret || (auth !== `Bearer ${secret}` && key !== secret)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   await runMaintenance();
