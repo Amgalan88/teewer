@@ -1524,3 +1524,25 @@ main:has(.landing) > .wrap {
   min-width: 0;
   flex: 1;
 }
+
+/* жолоочийн санал: үнэ + товч нэг мөрөнд */
+.bid-card {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+.bid-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.bid-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bid-row .btn {
+  flex: none;
+  white-space: nowrap;
+}

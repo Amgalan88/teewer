@@ -52,8 +52,6 @@ export default async function DriverOrderPage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <OrderSummary order={order} companyName={order.company.name} t={t} lang={lang} />
-
       {bid && !(biddingOpen && bid.status === "WITHDRAWN") && (
         <section className="card stack">
           <div className="row between">
@@ -84,20 +82,23 @@ export default async function DriverOrderPage({ params }: { params: Promise<{ id
       )}
 
       {canBid && (
-        <section className="card">
-          <h2>{t.driver.bidTitle}</h2>
+        <section className="card bid-card">
+          <h2 style={{ marginBottom: 4 }}>{t.driver.bidTitle}</h2>
+          <p className="muted small" style={{ marginTop: 0 }}>
+            {t.cargo[order.cargoType as keyof Dict["cargo"]]} · {num(order.totalTons)} {t.common.tons} · {order.loadPlace} →{" "}
+            {order.unloadPlace}
+          </p>
           {isSuspended(driver) ? (
             <p className="alert error" style={{ margin: 0 }}>
               {fmt(t.driver.suspendedNote, { time: dateTime(driver.suspendedUntil!, lang) })}
             </p>
           ) : (
             <>
-              <p className="muted small">{t.driver.sealed}</p>
               <ActionForm action={placeBid.bind(null, order.id)}>
-                <div className="field">
-                  <label htmlFor="price">
-                    {t.driver.priceLabel} ({unit})
-                  </label>
+                <label htmlFor="price" className="small" style={{ fontWeight: 600 }}>
+                  {t.driver.priceLabel} ({unit})
+                </label>
+                <div className="bid-row">
                   <input
                     id="price"
                     name="price"
@@ -105,30 +106,30 @@ export default async function DriverOrderPage({ params }: { params: Promise<{ id
                     inputMode="numeric"
                     min="1"
                     step="1"
+                    placeholder="0"
                     defaultValue={bid?.status === "SUBMITTED" ? bid.price : undefined}
                     required
                   />
+                  <button className="btn primary lg">
+                    {bid?.status === "SUBMITTED" ? t.driver.updateBid : t.driver.submitBid}
+                  </button>
                 </div>
-                <div className="field">
-                  <label htmlFor="note">{t.driver.noteLabel}</label>
-                  <input id="note" name="note" defaultValue={bid?.status === "SUBMITTED" ? (bid.note ?? "") : ""} />
-                </div>
-                {bid?.status === "SUBMITTED" && order.priceUnit === "PER_TON" && (
-                  <p className="muted small">
-                    {fmt(t.driver.estimate, {
-                      tons: num(order.totalTons),
-                      price: unitPrice(bid.price, order.priceUnit, t),
-                      total: money(order.totalTons * bid.price),
-                    })}
-                  </p>
-                )}
-                <button className="btn primary block">
-                  {bid?.status === "SUBMITTED" ? t.driver.updateBid : t.driver.submitBid}
-                </button>
               </ActionForm>
+              <p className="muted small" style={{ margin: "8px 0 0" }}>
+                🔒 {t.driver.sealed}
+              </p>
+              {bid?.status === "SUBMITTED" && order.priceUnit === "PER_TON" && (
+                <p className="muted small" style={{ margin: "4px 0 0" }}>
+                  {fmt(t.driver.estimate, {
+                    tons: num(order.totalTons),
+                    price: unitPrice(bid.price, order.priceUnit, t),
+                    total: money(order.totalTons * bid.price),
+                  })}
+                </p>
+              )}
               {bid?.status === "SUBMITTED" && (
                 <ActionForm action={withdrawBid.bind(null, bid.id)} confirmText={t.common.areYouSure}>
-                  <button className="linkbtn" style={{ marginTop: 8 }}>
+                  <button className="linkbtn" style={{ marginTop: 4, paddingLeft: 0 }}>
                     {t.driver.withdraw}
                   </button>
                 </ActionForm>
@@ -139,6 +140,8 @@ export default async function DriverOrderPage({ params }: { params: Promise<{ id
       )}
 
       {!biddingOpen && !bid && <p className="alert warn">{t.driver.closed}</p>}
+
+      <OrderSummary order={order} companyName={order.company.name} t={t} lang={lang} />
 
       {bid && ["CONFIRMED", "COMPLETED", "RELEASED"].includes(bid.status) && (
         <Work bid={bid} order={order} t={t} lang={lang} />
