@@ -1,0 +1,182 @@
+// teewer.mn — үйлдвэрлэлийн овортой ачааны тендерийн платформ.
+// Supabase PostgreSQL. Хүснэгт бүр дээр RLS асаалттай (prisma/rls.sql) — Data API-аар хандах боломжгүй.
+// Төлөвүүдийг enum биш String-ээр хадгална (lib/constants.ts-д тодорхойлсон).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // сайт ажиллахад (session pooler 5432, .env-ийн тайлбарыг үз)
+  directUrl = env("DIRECT_URL") // 5432: db push / migrate
+}
+
+model User {
+  id           String   @id @default(cuid())
+  role         String // COMPANY | DRIVER | ADMIN
+  phone        String   @unique // 8 оронтой, нэг дугаар = нэг бүртгэл
+  email        String?  @unique
+  passwordHash String
+  name         String
+  status       String   @default("PENDING") // PENDING | ACTIVE | SUSPENDED
+  lang         String   @default("mn")
+  createdAt    DateTime @default(now())
+
+  company       Company?
+  driver        Driver?
+  subscriptions PushSubscription[]
+}
+
+model Company {
+  id         String  @id @default(cuid())
+  userId     String  @unique
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  registerNo String  @unique // байгууллагын регистр
+  orders     Order[]
+  templates  OrderTemplate[]
+}
+
+model Driver {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plateNo        String    @unique // улсын дугаар (нормчилсон)
+  trailerPlateNo String?   @unique // чиргүүлтэй бол
+  bankName       String // lib/constants.ts BANKS
+  bankAccount    String
+  truckPhoto     Bytes?
+  truckPhotoType String?
+  truckType      String? // бүртгэлд асуухгүй; дараа профайлаас
+  capacityTons   Float?
+  completedJobs  Int       @default(0)
+  noShows        Int       @default(0) // баталгаажуулаад ирээгүй / цуцалсан
+  expiredCount   Int       @default(0) // хугацаандаа баталгаажуулаагүй
+  suspendedUntil DateTime?
+  bids           Bid[]
+}
+
+model Order {
+  id              String    @id @default(cuid())
+  code            Int       @unique
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id])
+  cargoType       String
+  totalTons       Float
+  region          String    @default("Дархан-Уул")
+  loadPlace       String
+  unloadPlace     String
+  routeNote       String?
+  distanceKm      Float?
+  truckType       String
+  priceUnit       String // PER_TON | PER_TRIP
+  trucksNeeded    Int
+  startDate       DateTime
+  endDate         DateTime
+  biddingClosesAt DateTime
+  description     String?
+  status          String    @default("OPEN") // OPEN | CLOSED | AWARDED | COMPLETED | CANCELLED
+  listingFee      Int       @default(0)
+  templateId      String?
+  template        OrderTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+  bids            Bid[]
+  trips           Trip[]
+  payments        Payment[]
+}
+
+model Bid {
+  id              String    @id @default(cuid())
+  orderId         String
+  order           Order     @relation(fields: [orderId], references: [id])
+  driverId        String
+  driver          Driver    @relation(fields: [driverId], references: [id])
+  price           Int // ₮, нэгж нь order.priceUnit
+  note            String?
+  // SUBMITTED | WITHDRAWN | NOT_SELECTED | SELECTED | CONFIRMED | DECLINED | EXPIRED | RELEASED | COMPLETED
+  status          String    @default("SUBMITTED")
+  confirmDeadline DateTime?
+  successFee      Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  trips           Trip[]
+  payments        Payment[]
+
+  @@unique([orderId, driverId])
+}
+
+// Байнгын чиглэл: ижил зарыг нэг товшилтоор дахин нийтлэх загвар
+model OrderTemplate {
+  id           String   @id @default(cuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name         String
+  cargoType    String
+  totalTons    Float
+  region       String   @default("Дархан-Уул")
+  loadPlace    String
+  unloadPlace  String
+  routeNote    String?
+  distanceKm   Float?
+  truckType    String
+  priceUnit    String
+  trucksNeeded Int
+  durationDays Int // гүйцэтгэх хугацаа (хоног)
+  biddingHours Int // тендер хэдэн цаг нээлттэй байх
+  description  String?
+  createdAt    DateTime @default(now())
+  orders       Order[]
+}
+
+// Нэг рейс = нэг жингийн тасалбар
+model Trip {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  bidId      String
+  bid        Bid      @relation(fields: [bidId], references: [id])
+  tons       Float
+  ticketNo   String
+  photo      Bytes?
+  photoType  String?
+  status     String   @default("SUBMITTED") // SUBMITTED | APPROVED | REJECTED
+  createdAt  DateTime @default(now())
+}
+
+// Платформ мөнгө дамжуулахгүй: компани шууд шилжүүлээд бүртгэнэ, жолооч баталгаажуулна
+model Payment {
+  id         String    @id @default(cuid())
+  orderId    String
+  order      Order     @relation(fields: [orderId], references: [id])
+  bidId      String
+  bid        Bid       @relation(fields: [bidId], references: [id])
+  amount     Int
+  note       String?
+  paidAt     DateTime  @default(now())
+  receivedAt DateTime?
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
+
+// Verify.MN-ээр утасны дугаар баталгаажуулах (бүртгэлийн өмнө)
+model PhoneVerification {
+  id         String    @id
+  phone      String
+  code       String
+  sessionId  String    @unique // Verify.MN session (нууц: клиент рүү илгээхгүй)
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  usedAt     DateTime? // нэг баталгаажуулалт = нэг бүртгэл
+
+  @@index([phone, createdAt])
+}

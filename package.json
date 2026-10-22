@@ -1,0 +1,34 @@
+{
+  "name": "teewer-mn",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "db:push": "prisma db push && prisma db execute --file prisma/rls.sql --schema prisma/schema.prisma",
+    "db:seed": "node --env-file=.env scripts/seed-admin.mjs",
+    "vapid": "node scripts/gen-vapid.mjs",
+    "postinstall": "prisma generate",
+    "demo": "tsx --env-file=.env scripts/demo.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
+    "jose": "^5.10.0",
+    "next": "^15.5.28",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "web-push": "^3.6.7",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/web-push": "^3.6.4",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
